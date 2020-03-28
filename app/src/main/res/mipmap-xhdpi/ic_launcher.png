@@ -1,0 +1,144 @@
+/*
+ * Copyright (C) 2015 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package androidx.appcompat.app;
+
+import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
+
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.res.TypedArray;
+import android.database.Cursor;
+import android.graphics.drawable.Drawable;
+import android.os.Build;
+import android.os.Handler;
+import android.os.Message;
+import android.text.TextUtils;
+import android.util.AttributeSet;
+import android.util.TypedValue;
+import android.view.Gravity;
+import android.view.KeyEvent;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.ViewGroup.LayoutParams;
+import android.view.ViewParent;
+import android.view.ViewStub;
+import android.view.Window;
+import android.view.WindowManager;
+import android.widget.AbsListView;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.CheckedTextView;
+import android.widget.CursorAdapter;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.ListAdapter;
+import android.widget.ListView;
+import android.widget.SimpleCursorAdapter;
+import android.widget.TextView;
+
+import androidx.annotation.Nullable;
+import androidx.appcompat.R;
+import androidx.appcompat.widget.LinearLayoutCompat;
+import androidx.core.view.ViewCompat;
+import androidx.core.widget.NestedScrollView;
+
+import java.lang.ref.WeakReference;
+
+class AlertController {
+    private final Context mContext;
+    final AppCompatDialog mDialog;
+    private final Window mWindow;
+    private final int mButtonIconDimen;
+
+    private CharSequence mTitle;
+    private CharSequence mMessage;
+    ListView mListView;
+    private View mView;
+
+    private int mViewLayoutResId;
+
+    private int mViewSpacingLeft;
+    private int mViewSpacingTop;
+    private int mViewSpacingRight;
+    private int mViewSpacingBottom;
+    private boolean mViewSpacingSpecified = false;
+
+    Button mButtonPositive;
+    private CharSequence mButtonPositiveText;
+    Message mButtonPositiveMessage;
+    private Drawable mButtonPositiveIcon;
+
+    Button mButtonNegative;
+    private CharSequence mButtonNegativeText;
+    Message mButtonNegativeMessage;
+    private Drawable mButtonNegativeIcon;
+
+    Button mButtonNeutral;
+    private CharSequence mButtonNeutralText;
+    Message mButtonNeutralMessage;
+    private Drawable mButtonNeutralIcon;
+
+    NestedScrollView mScrollView;
+
+    private int mIconId = 0;
+    private Drawable mIcon;
+
+    private ImageView mIconView;
+    private TextView mTitleView;
+    private TextView mMessageView;
+    private View mCustomTitleView;
+
+    ListAdapter mAdapter;
+
+    int mCheckedItem = -1;
+
+    private int mAlertDialogLayout;
+    private int mButtonPanelSideLayout;
+    int mListLayout;
+    int mMultiChoiceItemLayout;
+    int mSingleChoiceItemLayout;
+    int mListItemLayout;
+
+    private boolean mShowTitle;
+
+    private int mButtonPanelLayoutHint = AlertDialog.LAYOUT_HINT_NONE;
+
+    Handler mHandler;
+
+    private final View.OnClickListener mButtonHandler = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            final Message m;
+            if (v == mButtonPositive && mButtonPositiveMessage != null) {
+                m = Message.obtain(mButtonPositiveMessage);
+            } else if (v == mButtonNegative && mButtonNegativeMessage != null) {
+                m = Message.obtain(mButtonNegativeMessage);
+            } else if (v == mButtonNeutral && mButtonNeutralMessage != null) {
+                m = Message.obtain(mButtonNeutralMessage);
+            } else {
+                m = null;
+            }
+
+            if (m != null) {
+                m.sendToTarget();
+            }
+
+            // Post a message so we dismis
